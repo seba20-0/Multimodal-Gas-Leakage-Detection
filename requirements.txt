@@ -1,0 +1,7 @@
+tensorflow        # for tf.data, models, layers, etc.
+tensorflow-probability # for bayesian models
+pandas               # for CSV loading and DataFrame manipulation
+numpy               # for array ops and indexing
+scikit-learn         # for train_test_split & StandardScaler
+matplotlib           # plotting figures (ablation curves, MC‐dropout histograms)
+
