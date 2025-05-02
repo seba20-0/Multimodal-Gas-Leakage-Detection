@@ -79,6 +79,17 @@ gas-detection/
 
 ---
 
+## 📑 Data Sources
+
+We use the publicly available multimodal gas dataset of thermal images and sensor readings:
+
+- **Mendeley Data**: "Multimodal Gas Sensing and Thermal Imaging Dataset" (Version 2). Available at: https://data.mendeley.com/datasets/zkwgkjkjn9/2
+
+
+Please cite the original Mendeley dataset in any publications:
+
+> T. Samal and A. Ghosh, *Multimodal Gas Sensing and Thermal Imaging Dataset* (Version 2), Mendeley Data, 2024. doi:10.17632/zkwgkjkjn9.2
+
 
 ## Contributions
 1. Fork the repo
@@ -89,5 +100,5 @@ gas-detection/
 ---
 
 ## License
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Apache License](LICENSE).
 
