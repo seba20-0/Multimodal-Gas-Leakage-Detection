@@ -105,7 +105,7 @@ def load_and_split_image_data(
 
     def process_image(path, label):
         img = tf.io.read_file(path)
-        img = tf.image.decode_image(img, channels=3)
+        img = tf.image.decode_png(img, channels=3)
         img = tf.image.resize(img, img_size)
         img = tf.cast(img, tf.float32) / 255.0
         return img, label
@@ -194,7 +194,7 @@ def load_and_split_multimodal_data(
     # Define loader
     def loader(path, sens, lab):
         img = tf.io.read_file(path)
-        img = tf.image.decode_image(img, channels=3)
+        img = tf.image.decode_png(img, channels=3)
         img = tf.image.resize(img, img_size)
         img = tf.cast(img, tf.float32) / 255.0
         sens = tf.cast(sens, tf.float32)
