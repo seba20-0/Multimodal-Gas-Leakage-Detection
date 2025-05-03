@@ -1,6 +1,6 @@
-tensorflow        # for tf.data, models, layers, etc.
-pandas               # for CSV loading and DataFrame manipulation
-numpy               # for array ops and indexing
-scikit-learn         # for train_test_split & StandardScaler
-matplotlib           # plotting figures (ablation curves, MC‐dropout histograms)
+tensorflow        
+pandas               
+numpy               
+scikit-learn         
+matplotlib           
 
