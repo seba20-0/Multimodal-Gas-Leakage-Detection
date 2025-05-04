@@ -1,6 +1,5 @@
 import tensorflow as tf
-import tensorflow_probability as tfp
-from tensorflow_probability import layers as tfp_layers
+
 
 # --------------- Sampling layer to simulate sensor faliure  ---------------------
 
@@ -43,7 +42,7 @@ class MCSpatialDropout2D(tf.keras.layers.SpatialDropout2D):
     so we can sample N stochastic forward passes.
     """
     def call(self, inputs, training=None):
-        # Force dropout even in inference
+        # Force dropout even in inference 
         return super().call(inputs, training=True)
 
 
@@ -122,7 +121,7 @@ def build_multimodal_model(
     input_dim=7,
     sensor_dropout_rate=0.3,
     layer_dropout=0.5,
-    sensor_units=32,
+    sensor_units=(64,32),
     img_dense=64,
     fusion_dense=64,
     output_units=4,
@@ -135,7 +134,9 @@ def build_multimodal_model(
     # Sensor input
     s_in = tf.keras.Input(shape=(input_dim,), name="sensor_input")
     s = RandomSensorDropout(sensor_dropout_rate, name="sensor_dropout")(s_in)
-    s = tf.keras.layers.Dense(sensor_units, activation="relu")(s)
+    s = tf.keras.layers.Dense(sensor_units[0], activation="relu")(s)
+    s = MCDropout(layer_dropout)(s)
+    s = tf.keras.layers.Dense(sensor_units[1], activation="relu")(s)
     s = MCDropout(layer_dropout)(s)
 
     # Image input
