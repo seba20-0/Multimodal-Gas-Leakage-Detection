@@ -26,7 +26,7 @@ class RandomSensorDropout(tf.keras.layers.Layer):
         return config
     
 
-# --------------- Monte Carlo Dropout Layer ---------------------    
+# --------------- Monte Carlo Dropout Layers ---------------------    
 class MCDropout(tf.keras.layers.Dropout):
     """
     Dropout that is active both at train *and* inference time,
@@ -35,6 +35,17 @@ class MCDropout(tf.keras.layers.Dropout):
     def call(self, inputs, training=None):
         # Force dropout even in inference
         return super().call(inputs, training=True)
+    
+
+class MCSpatialDropout2D(tf.keras.layers.SpatialDropout2D):
+    """
+    Dropout that is active both at train *and* inference time,
+    so we can sample N stochastic forward passes.
+    """
+    def call(self, inputs, training=None):
+        # Force dropout even in inference
+        return super().call(inputs, training=True)
+
 
 
 # --------------- Sensor Model ---------------------
@@ -71,7 +82,7 @@ def build_sensor_model(
 
 def build_image_model(
     img_shape=(120,160,3),
-    conv_filters=(32, 64),
+    conv_filters=(32, 64 , 128),
     layer_dropout = 0.5,
     dense_units=64,
     output_units=4,
@@ -81,9 +92,15 @@ def build_image_model(
     Image-only CNN classifier.
     """
     inp = tf.keras.Input(shape=img_shape, name="image_input")
-    x = tf.keras.layers.Conv2D(conv_filters[0], 3, activation="relu", padding="same")(inp)
+    x = tf.keras.layers.Conv2D(conv_filters[0], 3, activation="relu", padding="same", use_bias=False)(inp)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.MaxPooling2D()(x)
-    x = tf.keras.layers.Conv2D(conv_filters[1], 3, activation="relu", padding="same")(x)
+    x = tf.keras.layers.Conv2D(conv_filters[1], 3, activation="relu", padding="same",use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling2D()(x)
+    x = tf.keras.layers.Conv2D(conv_filters[2], 3, activation="relu", padding="same",use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = MCSpatialDropout2D(0.2)(x)
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dense(dense_units, activation="relu")(x)
     x = MCDropout(layer_dropout)(x)
@@ -101,10 +118,10 @@ def build_image_model(
 
 # --------------- Multimodal Model ---------------------
 def build_multimodal_model(
-    img_shape=(120,160,3),
+    img_shape=(120, 160, 3),
     input_dim=7,
     sensor_dropout_rate=0.3,
-    layer_dropout = 0.5,
+    layer_dropout=0.5,
     sensor_units=32,
     img_dense=64,
     fusion_dense=64,
@@ -113,19 +130,28 @@ def build_multimodal_model(
 ):
     """
     Intermediate fusion of sensor and image branches.
+    Enhanced image branch with deeper layers and normalization.
     """
+    # Sensor input
     s_in = tf.keras.Input(shape=(input_dim,), name="sensor_input")
-    i_in = tf.keras.Input(shape=img_shape, name="image_input")
-
-    # Sensor branch
     s = RandomSensorDropout(sensor_dropout_rate, name="sensor_dropout")(s_in)
     s = tf.keras.layers.Dense(sensor_units, activation="relu")(s)
     s = MCDropout(layer_dropout)(s)
 
-    # Image branch
-    x = tf.keras.layers.Conv2D(32, 3, activation="relu", padding="same")(i_in)
+    # Image input
+    i_in = tf.keras.Input(shape=img_shape, name="image_input")
+    x = tf.keras.layers.Conv2D(32, 3, padding="same", activation="relu" ,use_bias=False)(i_in)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.MaxPooling2D()(x)
-    x = tf.keras.layers.Conv2D(64, 3, activation="relu", padding="same")(x)
+
+    x = tf.keras.layers.Conv2D(64, 3, padding="same", activation="relu", use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.MaxPooling2D()(x)
+
+    x = tf.keras.layers.Conv2D(128, 3, padding="same", activation="relu", use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = MCSpatialDropout2D(0.2)(x)
+
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dense(img_dense, activation="relu")(x)
     x = MCDropout(layer_dropout)(x)
@@ -136,9 +162,10 @@ def build_multimodal_model(
     y = MCDropout(layer_dropout)(y)
     out = tf.keras.layers.Dense(output_units, activation="softmax", name="output")(y)
 
+    # Model compile
     model = tf.keras.Model([s_in, i_in], out, name="multimodal")
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(lr),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"]
     )
