@@ -16,7 +16,7 @@ A comprehensive framework for detecting gas types by fusing thermal camera image
 
 ```bash
 git clone https://github.com/yourusername/gas-detection.git
-cd gas-detection
+cd Multimodal-Gas-Leakage-detection
 ```
 
 ### 2. Install dependencies
